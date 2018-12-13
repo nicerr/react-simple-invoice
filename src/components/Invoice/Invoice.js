@@ -74,7 +74,6 @@ const Invoice = () => {
 
   const calcGrandTotal = () => calcLineItemsTotal() + calcTaxTotal()
 
-  // const render = () => {
   return (
     <div className={styles.invoice}>
       <div className={styles.brand}>
@@ -185,6 +184,5 @@ const Invoice = () => {
     </div>
   )
 }
-// }
 
 export default Invoice
