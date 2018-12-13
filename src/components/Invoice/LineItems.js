@@ -1,5 +1,5 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
+// @flow
+import * as React from 'react'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 
 import LineItem from './LineItem'
@@ -7,11 +7,32 @@ import LineItem from './LineItem'
 import { MdAddCircle as AddIcon } from 'react-icons/md'
 import styles from './LineItems.module.scss'
 
+type props = {
+  items: Array<{
+    id: string,
+    name: string,
+    description: string,
+    quantity?: number,
+    price?: number,
+  }>,
+  currencyFormatter: Function,
+  addHandler: Function,
+  changeHandler: Function,
+  focusHandler: Function,
+  deleteHandler: Function,
+  reorderHandler: Function,
+}
 
-class LineItems extends Component {
-
-  handleDragEnd = (result) => {
-
+const LineItems = ({
+  items,
+  currencyFormatter,
+  addHandler,
+  changeHandler,
+  focusHandler,
+  deleteHandler,
+  reorderHandler
+}: props) => {
+  const handleDragEnd = result => {
     if (!result.destination) return
 
     // helper function to reorder result (src: react-beautiful-dnd docs)
@@ -24,92 +45,84 @@ class LineItems extends Component {
 
     // perform reorder
     const lineItems = reorder(
-      this.props.items,
+      items,
       result.source.index,
       result.destination.index
     )
 
     // call parent handler with new state representation
-    this.props.reorderHandler(lineItems)
-
+    reorderHandler(lineItems)
   }
 
-  render = () => {
+  return (
+    <form>
+      <div className={styles.lineItems}>
+        <div className={`${styles.gridTable}`}>
+          <div className={`${styles.row} ${styles.header}`}>
+            <div>#</div>
+            <div>Item</div>
+            <div>Description</div>
+            <div>Qty</div>
+            <div>Price</div>
+            <div>Total</div>
+            <div />
+          </div>
 
-    const {items, addHandler, reorderHandler, ...functions} = this.props
-
-    return (
-      <form>
-
-        <div className={styles.lineItems}>
-          <div className={`${styles.gridTable}`}>
-
-            <div className={`${styles.row} ${styles.header}`}>
-              <div>#</div>
-              <div>Item</div>
-              <div>Description</div>
-              <div>Qty</div>
-              <div>Price</div>
-              <div>Total</div>
-              <div></div>
-            </div>
-
-            <DragDropContext onDragEnd={this.handleDragEnd}>
-              <Droppable droppableId="droppable">
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    className={snapshot.isDraggingOver ? styles.listDraggingOver : ''}
-                  >
-                    {this.props.items.map((item, i) => (
-                      <Draggable key={item.id} draggableId={item.id} index={i}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={provided.draggableProps.style}
-                            className={snapshot.isDragging ? styles.listItemDragging : ''}
-                          >
-                            <LineItem
-                              style={{color: 'red'}}
-                              key={i + item.id} index={i} name={item.name}
-                              description={item.description} quantity={item.quantity} price={item.price}
-                              {...functions}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId='droppable'>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  className={
+                    snapshot.isDraggingOver ? styles.listDraggingOver : ''
+                  }
+                >
+                  {items.map((item, i) => (
+                    <Draggable key={item.id} draggableId={item.id} index={i}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={provided.draggableProps.style}
+                          className={
+                            snapshot.isDragging ? styles.listItemDragging : ''
+                          }
+                        >
+                          <LineItem
+                            style={{ color: 'red' }}
+                            key={i + item.id}
+                            index={i}
+                            name={item.name}
+                            description={item.description}
+                            quantity={item.quantity}
+                            price={item.price}
+                            currencyFormatter={currencyFormatter}
+                            addHandler={addHandler}
+                            changeHandler={changeHandler}
+                            focusHandler={focusHandler}
+                            deleteHandler={deleteHandler}
+                            reorderHandler={reorderHandler}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
             </Droppable>
           </DragDropContext>
-
-          </div>
-
-          <div className={styles.addItem}>
-            <button type="button" onClick={addHandler}><AddIcon size="1.25em" className={styles.addIcon} /> Add Item</button>
-          </div>
-
         </div>
-      </form>
 
-    )
-  }
+        <div className={styles.addItem}>
+          <button type='button' onClick={addHandler}>
+            <AddIcon size='1.25em' className={styles.addIcon} /> Add Item
+          </button>
+        </div>
+      </div>
+    </form>
+  )
 }
 
 export default LineItems
-
-LineItems.propTypes = {
-  items: PropTypes.array.isRequired,
-  currencyFormatter: PropTypes.func.isRequired,
-  addHandler: PropTypes.func.isRequired,
-  changeHandler: PropTypes.func.isRequired,
-  focusHandler: PropTypes.func.isRequired,
-  deleteHandler: PropTypes.func.isRequired,
-  reorderHandler: PropTypes.func.isRequired,
-}
-
-

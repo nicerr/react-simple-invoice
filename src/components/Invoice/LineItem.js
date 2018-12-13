@@ -7,8 +7,8 @@ type props = {
   index: number,
   name: string,
   description: string,
-  quantity: number,
-  price: number,
+  quantity?: number,
+  price?: number,
   changeHandler: Function,
   focusHandler: Function,
   currencyFormatter: Function,
@@ -66,7 +66,7 @@ const LineItem = ({
         onFocus={focusHandler}
       />
     </div>
-    <div className={styles.currency}>{currencyFormatter(quantity * price)}</div>
+    <div className={styles.currency}>{currencyFormatter(quantity && price && quantity * price)}</div>
     <div>
       <button
         type='button'
