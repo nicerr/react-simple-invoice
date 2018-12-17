@@ -25,18 +25,19 @@ const Invoice = () => {
   })
 
   const handleInvoiceChange = event =>
-    setState({ [event.target.name]: event.target.value })
+    setState({ ...state, [event.target.name]: event.target.value })
 
   const handleLineItemChange = elementIndex => event => {
     let lineItems = state.lineItems.map((item, i) => {
       if (elementIndex !== i) return item
       return { ...item, [event.target.name]: event.target.value }
     })
-    setState({ lineItems })
+    setState({ ...state, lineItems })
   }
 
   const handleAddLineItem = event =>
     setState({
+      ...state,
       // use optimistic uuid for drag drop; in a production app this could be a database id
       lineItems: state.lineItems.concat([
         { id: uuidv4(), name: '', description: '', quantity: 0, price: 0.0 }
@@ -45,15 +46,14 @@ const Invoice = () => {
 
   const handleRemoveLineItem = elementIndex => event =>
     setState({
+      ...state,
       lineItems: state.lineItems.filter((item, i) => {
         return elementIndex !== i
       })
     })
 
   const handleReorderLineItems = newLineItems =>
-    setState({
-      lineItems: newLineItems
-    })
+    setState({ ...state, lineItems: newLineItems })
 
   const handleFocusSelect = event => event.target.select()
 
@@ -65,7 +65,7 @@ const Invoice = () => {
       maximumFractionDigits: 2
     }).format(amount)
 
-  const calcTaxAmount = c => c * (state.taxRate / 100)
+  // const calcTaxAmount = c => c * (state.taxRate / 100)
 
   const calcLineItemsTotal = () =>
     state.lineItems.reduce((prev, cur) => prev + cur.quantity * cur.price, 0)
