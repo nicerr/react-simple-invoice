@@ -6,56 +6,44 @@ import LineItems from './LineItems'
 import uuidv4 from 'uuid/v4'
 
 const { useState } = React
+const locale = 'en-ZA'
+const currency = 'ZAR'
 
 const Invoice = () => {
-  const locale = 'en-ZA'
-  const currency = 'ZAR'
+  const [taxRate, setTaxRate] = useState(14.0)
+  const [lineItems, setLineItems] = useState([
+    {
+      id: 'initial', // react-beautiful-dnd unique key
+      name: '',
+      description: '',
+      quantity: 0,
+      price: 0.0
+    }
+  ])
 
-  const [state, setState] = useState({
-    taxRate: 14.0,
-    lineItems: [
-      {
-        id: 'initial', // react-beautiful-dnd unique key
-        name: '',
-        description: '',
-        quantity: 0,
-        price: 0.0
-      }
-    ]
-  })
-
-  const handleInvoiceChange = event =>
-    setState({ ...state, [event.target.name]: event.target.value })
-
-  const handleLineItemChange = elementIndex => event => {
-    let lineItems = state.lineItems.map((item, i) => {
-      if (elementIndex !== i) return item
-      return { ...item, [event.target.name]: event.target.value }
-    })
-    setState({ ...state, lineItems })
+  const changeLineItem = elementIndex => event => {
+    setLineItems([
+      ...lineItems.filter((item, i) => elementIndex !== i),
+      (lineItems[elementIndex] = {
+        ...lineItems[elementIndex],
+        [event.target.name]: event.target.value
+      })
+    ])
   }
 
-  const handleAddLineItem = event =>
-    setState({
-      ...state,
-      // use optimistic uuid for drag drop; in a production app this could be a database id
-      lineItems: state.lineItems.concat([
-        { id: uuidv4(), name: '', description: '', quantity: 0, price: 0.0 }
-      ])
-    })
+  const addLineItem = event =>
+    // use optimistic uuid for drag drop; in a production app this could be a database id
+    setLineItems([
+      ...lineItems,
+      { id: uuidv4(), name: '', description: '', quantity: 0, price: 0.0 }
+    ])
 
-  const handleRemoveLineItem = elementIndex => event =>
-    setState({
-      ...state,
-      lineItems: state.lineItems.filter((item, i) => {
-        return elementIndex !== i
-      })
-    })
+  const removeLineItem = elementIndex => event =>
+    setLineItems(lineItems.filter((item, i) => elementIndex !== i))
 
-  const handleReorderLineItems = newLineItems =>
-    setState({ ...state, lineItems: newLineItems })
+  const reorderLineItems = newLineItems => setLineItems(newLineItems)
 
-  const handleFocusSelect = event => event.target.select()
+  const selectFocus = event => event.target.select()
 
   const formatCurrency = amount =>
     new Intl.NumberFormat(locale, {
@@ -65,14 +53,12 @@ const Invoice = () => {
       maximumFractionDigits: 2
     }).format(amount)
 
-  // const calcTaxAmount = c => c * (state.taxRate / 100)
+  const totalLineItems = () =>
+    lineItems.reduce((prev, cur) => prev + cur.quantity * cur.price, 0)
 
-  const calcLineItemsTotal = () =>
-    state.lineItems.reduce((prev, cur) => prev + cur.quantity * cur.price, 0)
+  const calculateTax = () => totalLineItems() * (taxRate / 100)
 
-  const calcTaxTotal = () => calcLineItemsTotal() * (state.taxRate / 100)
-
-  const calcGrandTotal = () => calcLineItemsTotal() + calcTaxTotal()
+  const totalTaxInclusive = () => totalLineItems() + calculateTax()
 
   return (
     <div className={styles.invoice}>
@@ -113,13 +99,13 @@ const Invoice = () => {
       <h2>Invoice</h2>
 
       <LineItems
-        items={state.lineItems}
+        items={lineItems}
         currencyFormatter={formatCurrency}
-        addHandler={handleAddLineItem}
-        changeHandler={handleLineItemChange}
-        focusHandler={handleFocusSelect}
-        deleteHandler={handleRemoveLineItem}
-        reorderHandler={handleReorderLineItems}
+        addHandler={addLineItem}
+        changeHandler={changeLineItem}
+        focusHandler={selectFocus}
+        deleteHandler={removeLineItem}
+        reorderHandler={reorderLineItems}
       />
 
       <div className={styles.totalContainer}>
@@ -132,9 +118,9 @@ const Invoice = () => {
                   name='taxRate'
                   type='number'
                   step='0.01'
-                  value={state.taxRate}
-                  onChange={handleInvoiceChange}
-                  onFocus={handleFocusSelect}
+                  value={taxRate}
+                  onChange={e => setTaxRate(e.target.value)}
+                  onFocus={selectFocus}
                 />
               </div>
             </div>
@@ -145,19 +131,19 @@ const Invoice = () => {
             <div className={styles.row}>
               <div className={styles.label}>Subtotal</div>
               <div className={`${styles.value} ${styles.currency}`}>
-                {formatCurrency(calcLineItemsTotal())}
+                {formatCurrency(totalLineItems())}
               </div>
             </div>
             <div className={styles.row}>
-              <div className={styles.label}>Tax ({state.taxRate}%)</div>
+              <div className={styles.label}>Tax ({taxRate}%)</div>
               <div className={`${styles.value} ${styles.currency}`}>
-                {formatCurrency(calcTaxTotal())}
+                {formatCurrency(calculateTax())}
               </div>
             </div>
             <div className={styles.row}>
               <div className={styles.label}>Total Due</div>
               <div className={`${styles.value} ${styles.currency}`}>
-                {formatCurrency(calcGrandTotal())}
+                {formatCurrency(totalTaxInclusive())}
               </div>
             </div>
           </div>
