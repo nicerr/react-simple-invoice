@@ -9,9 +9,36 @@ const { useState } = React
 const locale = 'en-ZA'
 const currency = 'ZAR'
 
+const useLineItems = (initialLineItems, lineItemTemplate) => {
+  const [lineItems, setLineItems] = useState(initialLineItems)
+
+  return [
+    lineItems,
+    {
+      changeLineItem: elementIndex => event =>
+        setLineItems([
+          ...lineItems.filter((item, i) => elementIndex !== i),
+          (lineItems[elementIndex] = {
+            ...lineItems[elementIndex],
+            [event.target.name]: event.target.value
+          })
+        ]),
+      addLineItem: event =>
+        // use optimistic uuid for drag drop; in a production app this could be a database id
+        setLineItems([...lineItems, lineItemTemplate]),
+
+      removeLineItem: elementIndex => event =>
+        setLineItems(lineItems.filter((item, i) => elementIndex !== i)),
+
+      reorderLineItems: newLineItems => setLineItems(newLineItems),
+
+      totalLineItems: reducer => lineItems.reduce(reducer, 0)
+    }
+  ]
+}
+
 const Invoice = () => {
-  const [taxRate, setTaxRate] = useState(14.0)
-  const [lineItems, setLineItems] = useState([
+  const initialLineItems = [
     {
       id: 'initial', // react-beautiful-dnd unique key
       name: '',
@@ -19,29 +46,35 @@ const Invoice = () => {
       quantity: 0,
       price: 0.0
     }
-  ])
+  ]
 
-  const changeLineItem = elementIndex => event => {
-    setLineItems([
-      ...lineItems.filter((item, i) => elementIndex !== i),
-      (lineItems[elementIndex] = {
-        ...lineItems[elementIndex],
-        [event.target.name]: event.target.value
-      })
-    ])
+  const lineItemTemplate = {
+    id: uuidv4(),
+    name: '',
+    description: '',
+    quantity: 0,
+    price: 0.0
   }
 
-  const addLineItem = event =>
-    // use optimistic uuid for drag drop; in a production app this could be a database id
-    setLineItems([
-      ...lineItems,
-      { id: uuidv4(), name: '', description: '', quantity: 0, price: 0.0 }
-    ])
+  const lineItemReducer = (acc, { quantity, price }) => acc + quantity * price
 
-  const removeLineItem = elementIndex => event =>
-    setLineItems(lineItems.filter((item, i) => elementIndex !== i))
+  const [taxRate, setTaxRate] = useState(14.0)
 
-  const reorderLineItems = newLineItems => setLineItems(newLineItems)
+  const [
+    lineItems,
+    {
+      changeLineItem,
+      addLineItem,
+      removeLineItem,
+      reorderLineItems,
+      totalLineItems
+    }
+  ] = useLineItems(initialLineItems, lineItemTemplate)
+
+  const calculateTax = () => totalLineItems(lineItemReducer) * (taxRate / 100)
+
+  const totalTaxInclusive = () =>
+    totalLineItems(lineItemReducer) + calculateTax()
 
   const selectFocus = event => event.target.select()
 
@@ -52,13 +85,6 @@ const Invoice = () => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount)
-
-  const totalLineItems = () =>
-    lineItems.reduce((prev, cur) => prev + cur.quantity * cur.price, 0)
-
-  const calculateTax = () => totalLineItems() * (taxRate / 100)
-
-  const totalTaxInclusive = () => totalLineItems() + calculateTax()
 
   return (
     <div className={styles.invoice}>
@@ -131,7 +157,7 @@ const Invoice = () => {
             <div className={styles.row}>
               <div className={styles.label}>Subtotal</div>
               <div className={`${styles.value} ${styles.currency}`}>
-                {formatCurrency(totalLineItems())}
+                {formatCurrency(totalLineItems(lineItemReducer))}
               </div>
             </div>
             <div className={styles.row}>
