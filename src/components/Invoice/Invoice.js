@@ -1,4 +1,5 @@
 import * as React from 'react'
+import useLineItems from '../custom-hooks/useLineItems.js'
 import styles from './Invoice.module.scss'
 
 import LineItems from './LineItems'
@@ -8,34 +9,6 @@ import uuidv4 from 'uuid/v4'
 const { useState } = React
 const locale = 'en-ZA'
 const currency = 'ZAR'
-
-const useLineItems = (initialLineItems, lineItemTemplate) => {
-  const [lineItems, setLineItems] = useState(initialLineItems)
-
-  return [
-    lineItems,
-    {
-      changeLineItem: elementIndex => event =>
-        setLineItems([
-          ...lineItems.filter((item, i) => elementIndex !== i),
-          (lineItems[elementIndex] = {
-            ...lineItems[elementIndex],
-            [event.target.name]: event.target.value
-          })
-        ]),
-      addLineItem: event =>
-        // use optimistic uuid for drag drop; in a production app this could be a database id
-        setLineItems([...lineItems, lineItemTemplate]),
-
-      removeLineItem: elementIndex => event =>
-        setLineItems(lineItems.filter((item, i) => elementIndex !== i)),
-
-      reorderLineItems: newLineItems => setLineItems(newLineItems),
-
-      totalLineItems: reducer => lineItems.reduce(reducer, 0)
-    }
-  ]
-}
 
 const Invoice = () => {
   const initialLineItems = [
