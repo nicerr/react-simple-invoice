@@ -1,3 +1,9 @@
+# React Simple Invoice Fork
+
+In this fork the line item logic has been placed in a generic custom hook and all the classes have been converted into functional components.
+
+Otherwise original README below still applies:
+
 # React Simple Invoice
 
 An example of an Invoice component built with React that enables users to create invoices.
